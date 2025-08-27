@@ -90,15 +90,23 @@ export function getSvgPathFromStroke(stroke: number[][]) {
 //   };
 // };
 
-export function pointerEventToCanvasPoint(e: React.PointerEvent, camera: Camera) {
-  const svg = (e.currentTarget as SVGSVGElement);
+export const pointerEventToCanvasPoint = (
+  e: React.PointerEvent,
+  camera: Camera,
+): Point => {
+  const svg = e.currentTarget as SVGSVGElement;
   const rect = svg.getBoundingClientRect();
 
-  const x = (e.clientX - rect.left - camera.x) / camera.zoom;
-  const y = (e.clientY - rect.top - camera.y) / camera.zoom;
+  return {
+    x: (e.clientX - rect.left - camera.x) / camera.zoom,
+    y: (e.clientY - rect.top - camera.y) / camera.zoom,
+  };
+};
 
-  return { x, y };
-}
+
+
+
+
 
 
 export function resizeBounds(bounds: XYWH, corner: Side, point: Point): XYWH {
