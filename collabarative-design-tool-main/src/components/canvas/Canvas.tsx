@@ -1,6 +1,9 @@
 "use client";
 
 import {
+  useCanRedo,
+  useCanUndo,
+  useHistory,
   useMutation,
   useMyPresence,
   useSelf,
@@ -48,6 +51,11 @@ const Canvas = () => {
   });
   const [camera, setCamera] = useState<Camera>({ x: 0, y: 0, zoom: 1 });
 
+  const history = useHistory();
+  const canUndo = useCanUndo();
+  const canRedo = useCanRedo();
+
+
   console.log(presence[0].selection);
 
   const onLayerPointerDown = useMutation(
@@ -58,6 +66,8 @@ const Canvas = () => {
       ) {
         return;
       }
+
+      history.pause();
 
       e.stopPropagation();
       if (!self.presence.selection.includes(layerId)) {
@@ -72,18 +82,19 @@ const Canvas = () => {
        setState({mode:CanvasMode.Translating,current:point});
 
     },
-    [camera, canvasState.mode],
+    [camera, canvasState.mode,history]  ,
   );
 
   const onResizeHandlePointerDown = useCallback(
     (corner: Side, initialBounds: XYWH) => {
+      history.pause();
       setState({
         mode: CanvasMode.Resizing,
         initialBounds,
         corner,
       });
     },
-    [],
+    [history],
   );
 
   const insertLayer = useMutation(
@@ -231,7 +242,7 @@ const Canvas = () => {
 
   const unSelectLayers = useMutation(({self,setMyPresence})=>{
     if(self.presence.selection.length>0){
-      setMyPresence({selection:[]})
+      setMyPresence({selection:[]},{addToHistory:true})
     }
 
   },[])
@@ -326,9 +337,10 @@ const Canvas = () => {
       else{
         setState({mode:CanvasMode.None})
       }
+      history.resume();
 
     },
-    [canvasState, setState, insertLayer,unSelectLayers],
+    [canvasState, setState, insertLayer,unSelectLayers,history],
   );
 
   return (
@@ -397,6 +409,10 @@ const Canvas = () => {
           }}
           canZoomIn={camera.zoom < 2}
           canZoomOut={camera.zoom > 0.5}
+          redo={()=>history.redo()}
+          undo={()=>history.undo()}
+          canRedo={canRedo}
+          canUndo={canUndo}
         />
       </div>
     </div>
