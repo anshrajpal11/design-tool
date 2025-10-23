@@ -13,6 +13,7 @@ import {
   Trash2,
   Eye,
   Crown as CrownIcon,
+  Import,
 } from "lucide-react";
 import { signout } from "~/actions/auth";
 import { Button } from "~/components/ui/button";
@@ -44,6 +45,7 @@ import {
   DropdownMenuTrigger,
 } from "~/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import Link from "next/link";
 
 const colors = [
   "bg-rose-300",
@@ -94,36 +96,36 @@ const page = () => {
     },
   ]);
 
-  // Team management state
+
   const [teamMembers, setTeamMembers] = useState([
     {
       id: 1,
-      name: "John Doe",
-      email: "john@example.com",
+      name: "aryan rudr",
+      email: "aryan@example.com",
       avatar: "/avatars/john.jpg",
       role: "Owner",
       isOnline: true,
     },
     {
       id: 2,
-      name: "Sarah Wilson",
-      email: "sarah@company.com",
+      name: "Ansh",
+      email: "ansh@company.com",
       avatar: "/avatars/sarah.jpg",
       role: "Admin",
       isOnline: true,
     },
     {
       id: 3,
-      name: "Mike Johnson",
-      email: "mike@company.com",
+      name: "Arsh Deep Bedi",
+      email: "arsh@company.com",
       avatar: "/avatars/mike.jpg",
       role: "Member",
       isOnline: false,
     },
     {
       id: 4,
-      name: "Emily Brown",
-      email: "emily@company.com",
+      name: "Mahajeen",
+      email: "ayush@company.com",
       avatar: "/avatars/emily.jpg",
       role: "Member",
       isOnline: false,
@@ -157,7 +159,6 @@ const page = () => {
     email: "",
   });
 
-  // Team management dialogs
   const [addMemberDialog, setAddMemberDialog] = useState({
     isOpen: false,
     name: "",
@@ -171,10 +172,10 @@ const page = () => {
     member: null as any,
   });
 
-  // Team search state
+  
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
 
-  // Filtered team members based on search
+ 
   const filteredTeamMembers = teamMembers.filter(
     (member) =>
       member.name.toLowerCase().includes(teamSearchQuery.toLowerCase()) ||
@@ -677,29 +678,38 @@ const page = () => {
               </Dialog>
             </div>
 
-
             <div className="grid grid-cols-1 gap-8 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredTeamMembers.map((member) => (
                 <div key={member.id} className="group relative">
-                  <Card className="overflow-visible shadow-md border-0 bg-white transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl rounded-2xl">
+                  <Card className="overflow-visible rounded-2xl border-0 bg-white shadow-md transition-transform duration-200 hover:-translate-y-1 hover:shadow-xl">
                     <CardContent className="p-0">
-                      <div className="relative flex flex-col items-center justify-center pt-8 pb-4 px-4">
+                      <div className="relative flex flex-col items-center justify-center px-4 pt-8 pb-4">
                         <div className="relative">
                           <Avatar className="h-20 w-20 border-4 border-white shadow-lg">
-                            <AvatarImage src={member.avatar} alt={member.name} />
+                            <AvatarImage
+                              src={member.avatar}
+                              alt={member.name}
+                            />
                             <AvatarFallback className="text-xl font-bold">
                               {member.name.charAt(0)}
                             </AvatarFallback>
                           </Avatar>
-                          {/* Online indicator */}
-                          <span className={`absolute bottom-1 right-1 h-4 w-4 rounded-full border-2 border-white ${member.isOnline ? "bg-green-500" : "bg-gray-400"}`}></span>
+                          
+                          <span
+                            className={`absolute right-1 bottom-1 h-4 w-4 rounded-full border-2 border-white ${member.isOnline ? "bg-green-500" : "bg-gray-400"}`}
+                          ></span>
                         </div>
-                        {/* Name and Email */}
-                        <h4 className="mt-4 text-lg font-semibold text-gray-900 text-center">{member.name}</h4>
-                        <p className="mt-1 text-sm text-gray-500 text-center break-all">{member.email}</p>
+                        
+                        <h4 className="mt-4 text-center text-lg font-semibold text-gray-900">
+                          {member.name}
+                        </h4>
+                        <p className="mt-1 text-center text-sm break-all text-gray-500">
+                          {member.email}
+                        </p>
                         {/* Role badge */}
                         <div className="mt-3">
-                          <span className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold shadow-sm border ${getRoleBadgeColor(member.role)}`}
+                          <span
+                            className={`inline-flex items-center rounded-full border px-3 py-1 text-xs font-semibold shadow-sm ${getRoleBadgeColor(member.role)}`}
                           >
                             {getRoleIcon(member.role)}
                             <span className="ml-1">{member.role}</span>
@@ -755,7 +765,7 @@ const page = () => {
                 </div>
               ))}
 
-              {/* Add New Member Card */}
+              
               <Dialog
                 open={addMemberDialog.isOpen}
                 onOpenChange={(open) =>
@@ -884,7 +894,7 @@ const page = () => {
               </Dialog>
             </div>
 
-            {/* Empty State for Team */}
+            
             {filteredTeamMembers.length === 0 && (
               <div className="py-12 text-center">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-gray-100">
@@ -921,7 +931,7 @@ const page = () => {
         </Tabs>
       </main>
 
-      {/* Join or Add Participants Dialog (My Projects) */}
+      
       <Dialog
         open={joinDialog.isOpen}
         onOpenChange={(open) =>
@@ -936,13 +946,13 @@ const page = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
-            <Button
-              onClick={handleJoinRoom}
-              className="flex items-center justify-center space-x-2"
+            <Link
+              href={'/dashboard/test'}
+              className="flex items-center justify-center space-x-2 border p-2 rounded-sm hover:bg-[#C9CEDA]"
             >
               <Users className="h-4 w-4" />
               <span>Join Room</span>
-            </Button>
+            </Link>
             <Button
               onClick={handleAddParticipants}
               variant="outline"
@@ -1006,12 +1016,10 @@ const page = () => {
             >
               Cancel
             </Button>
-            <Button
-              onClick={handlePasswordSubmit}
-              disabled={!passwordDialog.enteredPassword.trim()}
+            <Link href={'/dashboard/test'}
             >
               Join Room
-            </Button>
+            </Link>
           </DialogFooter>
         </DialogContent>
       </Dialog>

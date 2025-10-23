@@ -33,7 +33,7 @@ export default function Toolsbar({
   redo:()=>void;
 }) {
   return (
-    <div className="-translate-z-1/2 fixed bottom-4 left-1/2 z-10 flex items-center justify-center rounded-lg bg-white p-1 shadow-[0_0_3px_rgba(0,0,0,0.18)]">
+  <div className="-translate-z-1/2 fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex items-center justify-center rounded-lg bg-white p-1 shadow-[0_0_3px_rgba(0,0,0,0.18)]">
       <div className="flex items-center justify-center gap-3">
         <SelectionButton
           isActive={

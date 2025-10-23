@@ -34,6 +34,9 @@ import {
 import { LiveObject } from "@liveblocks/client";
 import { nanoid } from "nanoid";
 import Toolsbar from "../toolsbar/Toolsbar";
+import LayerList from "./LayerList";
+import LayerInspector from "./LayerInspector";
+import CursorsOverlay from "./CursorsOverlay";
 import Path from "./Path";
 import Navbar from "./Navbar";
 import SelectionBox from "./SelectionBox";
@@ -234,7 +237,15 @@ const Canvas = () => {
     if(self.presence.selection.length>0){
       const layer = liveLayers.get(self.presence.selection[0]!);
       if(layer){
-        layer.update(bounds);
+        // if text layer, also update font size proportionally to height
+        if(layer.get && layer.get("type") === LayerType.Text){
+          // Scale font size more naturally with height, using a sqrt function
+          // This makes small adjustments have less impact but still allows large changes
+          const newFontSize = Math.max(8, Math.round(Math.sqrt(bounds.height) * 4));
+          layer.update({ ...bounds, fontSize: newFontSize });
+        } else {
+          layer.update(bounds);
+        }
       }
     }
 
@@ -345,11 +356,16 @@ const Canvas = () => {
 
   return (
     <div className="flex h-screen w-full flex-col">
-      {/* Navbar */}
+      
       <Navbar roomName="Design Collaboration" />
 
-      {/* Canvas Area */}
+    
       <div className="flex flex-1">
+        {/* Left sidebar - layers */}
+        <aside className="w-64 border-r bg-gray-900 p-4 flex flex-col overflow-y-auto">
+          <LayerList layerIds={layerIds} />
+        </aside>
+
         <main className="relative flex-1 overflow-hidden">
           <div
             style={{
@@ -393,11 +409,13 @@ const Canvas = () => {
                   opacity={100}
                 />
               )}
+              {/* Cursors overlay */}
+              <CursorsOverlay />
             </svg>
           </div>
         </main>
 
-        {/* Toolbar */}
+      
         <Toolsbar
           canvasState={canvasState}
           setCanvasState={(newState) => setState(newState)}
@@ -414,6 +432,10 @@ const Canvas = () => {
           canRedo={canRedo}
           canUndo={canUndo}
         />
+        {/* Right sidebar - inspector */}
+        <aside className="w-72 border-l bg-gray-900 p-4 flex flex-col overflow-y-auto">
+          <LayerInspector />
+        </aside>
       </div>
     </div>
   );

@@ -102,8 +102,9 @@ export default function Text({
           <text
             onPointerDown={(e) => onPointerDown(e, id)}
             x={x}
-            y={y + fontSize}
+            y={y + (height + fontSize) / 2}
             fontSize={fontSize}
+            dominantBaseline="middle"
             fill={rgbToHex(fill)}
             stroke={rgbToHex(stroke)}
             opacity={opacity}
