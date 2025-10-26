@@ -61,8 +61,8 @@ const LayerList = ({ layerIds }: { layerIds?: string[] | null }) => {
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-slate-900 to-slate-800 text-white">
-      <div className="flex items-center justify-between px-3 py-2 border-b border-white/5">
+    <div className="flex h-full flex-col bg-gradient-to-b from-slate-900 to-slate-800 text-white">
+      <div className="flex items-center justify-between border-b border-white/5 px-3 py-2">
         <h3 className="text-sm font-semibold">Layers</h3>
         <button
           className="text-xs text-red-300 hover:underline"
@@ -79,21 +79,50 @@ const LayerList = ({ layerIds }: { layerIds?: string[] | null }) => {
               <div
                 key={id}
                 onClick={() => setSelection(id)}
-                className={`flex items-center justify-between gap-2 p-2 rounded-md cursor-pointer ${isSelected ? 'bg-blue-600/30' : 'hover:bg-white/5'}`}
+                className={`flex cursor-pointer items-center justify-between gap-2 rounded-md p-2 ${isSelected ? "bg-blue-600/30" : "hover:bg-white/5"}`}
               >
                 <div className="flex flex-col">
                   <div className="text-sm font-medium">Layer {idx + 1}</div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <button title="Bring forward" className="w-8 h-8 rounded bg-white/5 hover:bg-white/10" onClick={(e) => { e.stopPropagation(); bringForward(id); setSelection(id); }}>↟</button>
-                  <button title="Send backward" className="w-8 h-8 rounded bg-white/5 hover:bg-white/10" onClick={(e) => { e.stopPropagation(); sendBackward(id); setSelection(id); }}>↡</button>
-                  <button title="Delete" className="w-8 h-8 rounded bg-red-600 text-white" onClick={(e) => { e.stopPropagation(); deleteLayer(id); }}>🗑</button>
+                  <button
+                    title="Bring forward"
+                    className="h-8 w-8 rounded bg-white/5 hover:bg-white/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      bringForward(id);
+                      setSelection(id);
+                    }}
+                  >
+                    ↟
+                  </button>
+                  <button
+                    title="Send backward"
+                    className="h-8 w-8 rounded bg-white/5 hover:bg-white/10"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      sendBackward(id);
+                      setSelection(id);
+                    }}
+                  >
+                    ↡
+                  </button>
+                  <button
+                    title="Delete"
+                    className="h-8 w-8 rounded bg-red-600 text-white"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      deleteLayer(id);
+                    }}
+                  >
+                    🗑
+                  </button>
                 </div>
               </div>
             );
           })
         ) : (
-          <div className="text-sm text-gray-400 px-2 py-4">No layers</div>
+          <div className="px-2 py-4 text-sm text-gray-400">No layers</div>
         )}
       </div>
     </div>

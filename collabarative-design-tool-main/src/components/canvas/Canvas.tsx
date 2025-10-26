@@ -10,7 +10,7 @@ import {
   useStorage,
 } from "@liveblocks/react";
 import type React from "react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useRef } from "react";
 import {
   penPointToPathLayer,
   pointerEventToCanvasPoint,
@@ -47,7 +47,7 @@ const Canvas = () => {
   const roomColor = useStorage((root) => root.roomColor);
   const layerIds = useStorage((root) => root.layerIds);
   const pencilDraft = useSelf((me) => me.presence.pencilDraft);
-  const presence = useMyPresence();
+  const [myPresence, setMyPresence] = useMyPresence();
 
   const [canvasState, setState] = useState<CanvasState>({
     mode: CanvasMode.None,
@@ -58,8 +58,8 @@ const Canvas = () => {
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
 
-
-  console.log(presence[0].selection);
+  // debug: myPresence is a tuple [presence, setMyPresence], but here we only need presence
+  console.log(myPresence.selection);
 
   const onLayerPointerDown = useMutation(
     ({ self, setMyPresence }, e: React.PointerEvent, layerId: string) => {
@@ -81,11 +81,10 @@ const Canvas = () => {
           { addToHistory: true },
         );
       }
-       const point = pointerEventToCanvasPoint(e,camera);
-       setState({mode:CanvasMode.Translating,current:point});
-
+      const point = pointerEventToCanvasPoint(e, camera);
+      setState({ mode: CanvasMode.Translating, current: point });
     },
-    [camera, canvasState.mode,history]  ,
+    [camera, canvasState.mode, history],
   );
 
   const onResizeHandlePointerDown = useCallback(
@@ -193,7 +192,6 @@ const Canvas = () => {
     setState({ mode: CanvasMode.Pencil });
   }, []);
 
-
   const translateSelectedLayers = useMutation(
     ({ storage, self }, point: Point) => {
       if (canvasState.mode !== CanvasMode.Translating) {
@@ -221,42 +219,45 @@ const Canvas = () => {
     [canvasState],
   );
 
+  const resizeSelectedLayer = useMutation(
+    ({ storage, self }, point: Point) => {
+      if (canvasState.mode !== CanvasMode.Resizing) {
+        return;
+      }
 
-  const resizeSelectedLayer = useMutation(({ storage, self }, point: Point) => {
-    if (canvasState.mode !== CanvasMode.Resizing) {
-      return;
-    }
+      const bounds = resizeBounds(
+        canvasState.initialBounds,
+        canvasState.corner,
+        point,
+      );
 
-    const bounds = resizeBounds(
-      canvasState.initialBounds,
-      canvasState.corner,
-      point,
-    );
-    
-    const liveLayers = storage.get("layers");
-    if(self.presence.selection.length>0){
-      const layer = liveLayers.get(self.presence.selection[0]!);
-      if(layer){
-        // if text layer, also update font size proportionally to height
-        if(layer.get && layer.get("type") === LayerType.Text){
-          // Scale font size more naturally with height, using a sqrt function
-          // This makes small adjustments have less impact but still allows large changes
-          const newFontSize = Math.max(8, Math.round(Math.sqrt(bounds.height) * 4));
-          layer.update({ ...bounds, fontSize: newFontSize });
-        } else {
-          layer.update(bounds);
+      const liveLayers = storage.get("layers");
+      if (self.presence.selection.length > 0) {
+        const layer = liveLayers.get(self.presence.selection[0]!);
+        if (layer) {
+          // if text layer, also update font size proportionally to height
+          if (layer.get && layer.get("type") === LayerType.Text) {
+            // Scale font size more naturally with height, using a sqrt function
+            // This makes small adjustments have less impact but still allows large changes
+            const newFontSize = Math.max(
+              8,
+              Math.round(Math.sqrt(bounds.height) * 4),
+            );
+            layer.update({ ...bounds, fontSize: newFontSize });
+          } else {
+            layer.update(bounds);
+          }
         }
       }
+    },
+    [canvasState],
+  );
+
+  const unSelectLayers = useMutation(({ self, setMyPresence }) => {
+    if (self.presence.selection.length > 0) {
+      setMyPresence({ selection: [] }, { addToHistory: true });
     }
-
-  }, [canvasState]);
-
-  const unSelectLayers = useMutation(({self,setMyPresence})=>{
-    if(self.presence.selection.length>0){
-      setMyPresence({selection:[]},{addToHistory:true})
-    }
-
-  },[])
+  }, []);
 
   const startDrawing = useMutation(
     ({ setMyPresence }, point: Point, pressure: number) => {
@@ -324,13 +325,42 @@ const Canvas = () => {
         continueDrawing(point, e);
       } else if (canvasState.mode === CanvasMode.Resizing) {
         resizeSelectedLayer(point);
-      }
-       else if (canvasState.mode === CanvasMode.Translating) {
+      } else if (canvasState.mode === CanvasMode.Translating) {
         translateSelectedLayers(point);
       }
     },
     [canvasState, setState, insertLayer, continueDrawing, resizeSelectedLayer],
   );
+
+  // ref to SVG so we can calculate container-relative coords for presence cursor
+  const svgRef = useRef<SVGSVGElement | null>(null);
+
+  // wrapper pointer move handler: updates my presence cursor in screen/container coords,
+  // then delegates to the mutation handler which handles drawing/transforming
+  const handlePointerMove = (e: React.PointerEvent) => {
+    try {
+      const rect = svgRef.current?.getBoundingClientRect();
+      if (rect) {
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+        // round to integers to reduce presence churn
+        setMyPresence({ cursor: { x: Math.round(x), y: Math.round(y) } });
+      }
+    } catch (err) {
+      // ignore
+    }
+
+    // call existing mutation that handles canvas interactions
+    onPointerMove(e);
+  };
+
+  const handlePointerLeave = () => {
+    try {
+      setMyPresence({ cursor: null });
+    } catch (err) {
+      // ignore
+    }
+  };
 
   const onPointerUp = useMutation(
     ({}, e: React.PointerEvent) => {
@@ -344,26 +374,22 @@ const Canvas = () => {
         setState({ mode: CanvasMode.Dragging, origin: null });
       } else if (canvasState.mode === CanvasMode.Pencil) {
         insertPath();
-      }
-      else{
-        setState({mode:CanvasMode.None})
+      } else {
+        setState({ mode: CanvasMode.None });
       }
       history.resume();
-
     },
-    [canvasState, setState, insertLayer,unSelectLayers,history],
+    [canvasState, setState, insertLayer, unSelectLayers, history],
   );
 
   return (
     <div className="flex h-screen w-full flex-col">
-      
       <Navbar roomName="Design Collaboration" />
 
-    
       <div className="flex flex-1">
         {/* Left sidebar - layers */}
-        <aside className="w-64 border-r bg-gray-900 p-4 flex flex-col overflow-y-auto">
-          <LayerList layerIds={layerIds} />
+        <aside className="flex w-64 flex-col overflow-y-auto border-r bg-gray-900 p-4">
+          <LayerList layerIds={layerIds as unknown as string[]} />
         </aside>
 
         <main className="relative flex-1 overflow-hidden">
@@ -371,14 +397,17 @@ const Canvas = () => {
             style={{
               backgroundColor: roomColor ? rgbToHex(roomColor) : "#1e1e1e",
             }}
-            className="h-full w-full touch-none"
+            className="relative h-full w-full touch-none"
           >
             <svg
+              ref={svgRef}
               onWheel={onWheel}
               onPointerUp={onPointerUp}
               className="h-full w-full"
               onPointerDown={onPointerDown}
-              onPointerMove={onPointerMove}
+              onPointerMove={handlePointerMove}
+              onPointerLeave={handlePointerLeave}
+              onPointerCancel={handlePointerLeave}
             >
               <g
                 style={{
@@ -409,13 +438,13 @@ const Canvas = () => {
                   opacity={100}
                 />
               )}
-              {/* Cursors overlay */}
-              <CursorsOverlay />
             </svg>
+
+            {/* Cursors overlay (HTML) must be outside the SVG so we can position HTML elements on top */}
+            <CursorsOverlay />
           </div>
         </main>
 
-      
         <Toolsbar
           canvasState={canvasState}
           setCanvasState={(newState) => setState(newState)}
@@ -427,13 +456,13 @@ const Canvas = () => {
           }}
           canZoomIn={camera.zoom < 2}
           canZoomOut={camera.zoom > 0.5}
-          redo={()=>history.redo()}
-          undo={()=>history.undo()}
+          redo={() => history.redo()}
+          undo={() => history.undo()}
           canRedo={canRedo}
           canUndo={canUndo}
         />
         {/* Right sidebar - inspector */}
-        <aside className="w-72 border-l bg-gray-900 p-4 flex flex-col overflow-y-auto">
+        <aside className="flex w-72 flex-col overflow-y-auto border-l bg-gray-900 p-4">
           <LayerInspector />
         </aside>
       </div>

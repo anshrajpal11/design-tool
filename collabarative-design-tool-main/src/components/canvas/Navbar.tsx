@@ -1,9 +1,17 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { UserPlus, Users, Settings, Share2, Download, MoreHorizontal } from "lucide-react"
-import { Button } from "~/components/ui/button"
-import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar"
+import React, { useState, useMemo } from "react";
+import {
+  UserPlus,
+  Users,
+  Settings,
+  Share2,
+  Download,
+  MoreHorizontal,
+} from "lucide-react";
+import { Button } from "~/components/ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "~/components/ui/avatar";
+import { useOthers, useSelf } from "@liveblocks/react";
 import {
   Dialog,
   DialogContent,
@@ -12,84 +20,60 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
-} from "~/components/ui/dialog"
-import { Input } from "~/components/ui/input"
-import { Label } from "~/components/ui/label"
+} from "~/components/ui/dialog";
+import { Input } from "~/components/ui/input";
+import { Label } from "~/components/ui/label";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "~/components/ui/dropdown-menu"
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "~/components/ui/tooltip"
+} from "~/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "~/components/ui/tooltip";
 
-// Dummy users data
-const dummyUsers = [
-  {
-    id: 1,
-    name: "A",
-    email: "john@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    isOnline: true,
-    color: "#3B82F6",
-  },
-  {
-    id: 2,
-    name: "B",
-    email: "sarah@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    isOnline: true,
-    color: "#EF4444",
-  },
-  {
-    id: 3,
-    name: "C",
-    email: "mike@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    isOnline: false,
-    color: "#10B981",
-  },
-  {
-    id: 4,
-    name: "D",
-    email: "emily@example.com",
-    avatar: "/placeholder.svg?height=32&width=32",
-    isOnline: true,
-    color: "#F59E0B",
-  },
-]
+// Participants are read from Liveblocks presence (useOthers/useSelf)
 
 interface NavbarProps {
-  roomName?: string
+  roomName?: string;
 }
 
 const Navbar = ({ roomName = "Untitled Room" }: NavbarProps) => {
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false)
-  const [inviteEmail, setInviteEmail] = useState("")
+  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState("");
+  const others = useOthers();
+  const self = useSelf();
+
+  // combine self and others into a single participants array for rendering
+  const participants = useMemo(() => {
+    const base: any[] = [];
+    if (self) base.push(self);
+    if (others && others.length) base.push(...others);
+    return base;
+  }, [self, others]);
 
   const handleInviteUser = () => {
-    if (!inviteEmail.trim()) return
+    if (!inviteEmail.trim()) return;
 
-
-    alert(`Invitation sent to ${inviteEmail}`)
-    setInviteEmail("")
-    setIsInviteDialogOpen(false)
-  }
-
-  
+    alert(`Invitation sent to ${inviteEmail}`);
+    setInviteEmail("");
+    setIsInviteDialogOpen(false);
+  };
 
   return (
     <TooltipProvider>
-      <nav className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
-      
+      <nav className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3 shadow-sm">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            
             <h1 className="text-xl font-bold text-gray-900">CoDraw</h1>
           </div>
 
-          <div className="hidden md:block w-px h-6 bg-gray-300" />
+          <div className="hidden h-6 w-px bg-gray-300 md:block" />
 
           <div className="hidden md:block">
             <h2 className="text-sm font-medium text-gray-900">{roomName}</h2>
@@ -97,58 +81,81 @@ const Navbar = ({ roomName = "Untitled Room" }: NavbarProps) => {
           </div>
         </div>
 
-        
-        <div className="flex ml-250 items-center space-x-2">
+        <div className="ml-250 flex items-center space-x-2">
           <div className="flex items-center -space-x-2">
-            {dummyUsers.slice(0, 4).map((user) => (
-              <Tooltip key={user.id}>
-                <TooltipTrigger>
-                  <div className="relative">
-                    <Avatar className="w-8 h-8 border-2 border-white hover:scale-110 transition-transform cursor-pointer">
-                      <AvatarImage src={user.avatar || "/placeholder.svg"} alt={user.name} />
-                      <AvatarFallback style={{ backgroundColor: user.color }}>
-                        {user.name
-                          .split(" ")
-                          .map((n) => n[0])
-                          .join("")}
-                      </AvatarFallback>
-                    </Avatar>
-                    {user.isOnline && (
-                      <div className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
-                    )}
-                  </div>
-                </TooltipTrigger>
-                <TooltipContent>
-                  <p className="font-medium">{user.name}</p>
-                  <p className="text-xs text-gray-500">{user.isOnline ? "Online" : "Offline"}</p>
-                </TooltipContent>
-              </Tooltip>
-            ))}
-          </div>
+            {/* Render connected users from Liveblocks (self + others). Show up to 5 avatars, then a +N indicator */}
+            {participants.slice(0, 5).map((person: any, idx) => {
+              const info = person?.info ?? {};
+              const displayName =
+                info?.user?.name ?? info?.name ?? info?.email ?? "Anonymous";
+              const email = info?.user?.email ?? info?.email ?? "";
+              const color = info?.user?.color ?? info?.color ?? undefined;
+              const initials = displayName
+                .split(" ")
+                .map((n: string) => n[0])
+                .join("")
+                .slice(0, 2)
+                .toUpperCase();
 
-          {dummyUsers.length > 4 && (
-            <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs font-medium text-gray-600">
-              +{dummyUsers.length - 4}
-            </div>
-          )}
+              const isOnline = true; // if connected they appear here
+
+              return (
+                <Tooltip key={String(person.connectionId ?? idx)}>
+                  <TooltipTrigger>
+                    <div className="relative">
+                      <Avatar className="h-8 w-8 cursor-pointer border-2 border-white transition-transform hover:scale-110">
+                        {/* If user provided an avatar url in info, show it */}
+                        {info?.avatar ? (
+                          <AvatarImage src={info.avatar} alt={displayName} />
+                        ) : (
+                          <AvatarFallback style={{ backgroundColor: color }}>
+                            {initials}
+                          </AvatarFallback>
+                        )}
+                      </Avatar>
+                      {isOnline && (
+                        <div className="absolute -right-0.5 -bottom-0.5 h-3 w-3 rounded-full border-2 border-white bg-green-500" />
+                      )}
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p className="font-medium">{displayName}</p>
+                    {email && <p className="text-xs text-gray-500">{email}</p>}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            })}
+
+            {/* +N indicator when more participants are present */}
+            {participants.length > 5 && (
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-xs font-medium text-gray-600">
+                +{participants.length - 5}
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Right side - Actions */}
         <div className="flex items-center space-x-2">
           {/* Invite Button */}
-          <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
+          <Dialog
+            open={isInviteDialogOpen}
+            onOpenChange={setIsInviteDialogOpen}
+          >
             <DialogTrigger asChild>
-              <Button variant="outline" size="sm" className="flex items-center space-x-1 bg-transparent">
-                <UserPlus className="w-4 h-4" />
+              <Button
+                variant="outline"
+                size="sm"
+                className="flex items-center space-x-1 bg-transparent"
+              >
+                <UserPlus className="h-4 w-4" />
                 <span className="hidden sm:inline">Invite</span>
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[425px]">
               <DialogHeader>
                 <DialogTitle>Invite</DialogTitle>
-                <DialogDescription>
-                 
-                </DialogDescription>
+                <DialogDescription></DialogDescription>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
@@ -161,31 +168,32 @@ const Navbar = ({ roomName = "Untitled Room" }: NavbarProps) => {
                     onChange={(e) => setInviteEmail(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter") {
-                        handleInviteUser()
+                        handleInviteUser();
                       }
                     }}
                   />
                 </div>
               </div>
               <DialogFooter>
-                <Button variant="outline" onClick={() => setIsInviteDialogOpen(false)}>
+                <Button
+                  variant="outline"
+                  onClick={() => setIsInviteDialogOpen(false)}
+                >
                   Cancel
                 </Button>
-                <Button onClick={handleInviteUser} disabled={!inviteEmail.trim()}>
+                <Button
+                  onClick={handleInviteUser}
+                  disabled={!inviteEmail.trim()}
+                >
                   Send Invitation
                 </Button>
               </DialogFooter>
             </DialogContent>
           </Dialog>
-
-         
-
-         
-         
         </div>
       </nav>
     </TooltipProvider>
-  )
-}
+  );
+};
 
-export default Navbar
+export default Navbar;

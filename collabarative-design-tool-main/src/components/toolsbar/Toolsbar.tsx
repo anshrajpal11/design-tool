@@ -19,7 +19,7 @@ export default function Toolsbar({
   canUndo,
   canRedo,
   undo,
-  redo
+  redo,
 }: {
   canvasState: CanvasState;
   setCanvasState: (newState: CanvasState) => void;
@@ -27,13 +27,13 @@ export default function Toolsbar({
   zoomOut: () => void;
   canZoomIn: boolean;
   canZoomOut: boolean;
-  canUndo:boolean;
-  canRedo:boolean;
-  undo:()=>void;
-  redo:()=>void;
+  canUndo: boolean;
+  canRedo: boolean;
+  undo: () => void;
+  redo: () => void;
 }) {
   return (
-  <div className="-translate-z-1/2 fixed bottom-4 left-1/2 transform -translate-x-1/2 z-10 flex items-center justify-center rounded-lg bg-white p-1 shadow-[0_0_3px_rgba(0,0,0,0.18)]">
+    <div className="-translate-z-1/2 fixed bottom-4 left-1/2 z-10 flex -translate-x-1/2 transform items-center justify-center rounded-lg bg-white p-1 shadow-[0_0_3px_rgba(0,0,0,0.18)]">
       <div className="flex items-center justify-center gap-3">
         <SelectionButton
           isActive={
@@ -68,15 +68,25 @@ export default function Toolsbar({
           onClick={() => setCanvasState({ mode: CanvasMode.Pencil })}
         />
 
-        <TextButton isActive={canvasState.mode===CanvasMode.Inserting && canvasState.layerType===LayerType.Text} onClick={()=>setCanvasState({mode:CanvasMode.Inserting,layerType:LayerType.Text})}/>
-        
+        <TextButton
+          isActive={
+            canvasState.mode === CanvasMode.Inserting &&
+            canvasState.layerType === LayerType.Text
+          }
+          onClick={() =>
+            setCanvasState({
+              mode: CanvasMode.Inserting,
+              layerType: LayerType.Text,
+            })
+          }
+        />
+
         <div className="w-[1px] self-stretch bg-black/10" />
 
         <div className="flex items-center justify-center">
           <UndoButton onClick={undo} disabled={!canUndo} />
           <RedoButton onClick={redo} disabled={!canRedo} />
         </div>
-
 
         <div className="w-[1px] self-stretch bg-black/10" />
 

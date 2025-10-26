@@ -30,6 +30,18 @@ const page = () => {
         <CardContent>
           <form action={formAction} className="space-y-6">
             <div className="space-y-2">
+              <Label htmlFor="name" className="text-sm font-medium">
+                Name
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                type="text"
+                placeholder="Your full name"
+                className=""
+              />
+            </div>
+            <div className="space-y-2">
               <Label htmlFor="email" className="text-sm font-medium">
                 Email
               </Label>

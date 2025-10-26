@@ -39,9 +39,10 @@ export async function register(
   prevState: string | undefined,
   formData: FormData
 ): Promise<string | undefined> {
-  const {email,password} = await signUpSchema.parseAsync({
+  const {email, password, name} = await signUpSchema.parseAsync({
     email:formData.get('email'),
-    password:formData.get('password')
+    password:formData.get('password'),
+    name:formData.get('name')
   });
 
   const user=await db.user.findUnique({where:{email}});
@@ -54,7 +55,8 @@ export async function register(
   await db.user.create({
     data:{
       email,
-      password:hash
+      password:hash,
+      name
     }
   })
 
