@@ -90,16 +90,40 @@ export function getSvgPathFromStroke(stroke: number[][]) {
 //   };
 // };
 
+// export const pointerEventToCanvasPoint = (
+//   e: React.PointerEvent,
+//   camera: Camera,
+// ): Point => {
+//   const svg = e.currentTarget as SVGSVGElement;
+//   const rect = svg.getBoundingClientRect();
+
+//   return {
+//     x: (e.clientX - rect.left - camera.x) / camera.zoom,
+//     y: (e.clientY - rect.top - camera.y) / camera.zoom,
+//   };
+// };
+
+
 export const pointerEventToCanvasPoint = (
   e: React.PointerEvent,
-  camera: Camera,
+  camera: Camera
 ): Point => {
-  const svg = e.currentTarget as SVGSVGElement;
-  const rect = svg.getBoundingClientRect();
+  // Find the SVG root regardless of whether event target is shape or svg
+  let target = e.currentTarget as HTMLElement | null;
+  while (target && target.nodeName.toLowerCase() !== "svg") {
+    target = target.parentElement;
+  }
+
+  const svg = target as SVGSVGElement | null;
+  const rect = svg?.getBoundingClientRect();
+
+  const zoom = camera.zoom ?? 1;
+  const offsetX = rect ? rect.left : 0;
+  const offsetY = rect ? rect.top : 0;
 
   return {
-    x: (e.clientX - rect.left - camera.x) / camera.zoom,
-    y: (e.clientY - rect.top - camera.y) / camera.zoom,
+    x: (e.clientX - offsetX - camera.x) / zoom,
+    y: (e.clientY - offsetY - camera.y) / zoom,
   };
 };
 
