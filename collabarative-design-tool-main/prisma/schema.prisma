@@ -59,6 +59,7 @@ model User {
     accounts      Account[]
     sessions      Session[]
     posts         Post[]
+    commits       Commit[]
 }
 
 model VerificationToken {
@@ -67,4 +68,19 @@ model VerificationToken {
     expires    DateTime
 
     @@unique([identifier, token])
+}
+
+model Commit {
+    id        String   @id @default(cuid())
+    roomId    String
+    name      String
+    state     Json
+    pngBase64 String?  @db.Text
+    createdAt DateTime @default(now())
+    updatedAt DateTime @updatedAt
+
+    createdBy   User?   @relation(fields: [createdById], references: [id])
+    createdById String?
+
+    @@index([roomId])
 }
